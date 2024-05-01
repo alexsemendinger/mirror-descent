@@ -149,45 +149,34 @@ def generate_linear_data(config):
     return (X, y, w)
 
 
-def generate_train_test_val_loaders(config):
-    # TODO: could this be more concise? probably
-
-    n_samples = config['n_samples']
-    X, y, w = generate_linear_data(config)
+def generate_train_test_val_loaders(X, y):
+    """
+    Generates torch.util.data.DataLoaders for test, train, val
+    from tensors X, y
+    """
+    n_samples, _ = X.shape
+    assert n_samples == y.shape[0], f"Tensors are incompatible sizes to form dataset: {X.shape} {y.shape}"
 
     # Split the dataset into train, validation, and test sets
-    train_ratio = 0.6
-    val_ratio = 0.2
-    test_ratio = 0.2
-
+    train_ratio, val_ratio, test_ratio = 0.6, 0.2, 0.2
     train_size = int(n_samples * train_ratio)
     val_size = int(n_samples * val_ratio)
-    test_size = n_samples - train_size - val_size
 
-    X_train, y_train = X[:train_size], y[:train_size]
-    X_val, y_val = X[train_size:train_size+val_size], y[train_size:train_size+val_size]
-    X_test, y_test = X[train_size+val_size:], y[train_size+val_size:]
+    X_train, X_val, X_test = X[:train_size], X[train_size:train_size+val_size], X[train_size+val_size:]
+    y_train, y_val, y_test = y[:train_size], y[train_size:train_size+val_size], y[train_size+val_size:]
 
-    # Convert the data to PyTorch tensors
-    X_train_tensor = X_train.clone().detach()
-    y_train_tensor = y_train.clone().detach().unsqueeze(1)
-    X_val_tensor = X_val.clone().detach()
-    y_val_tensor = y_val.clone().detach().unsqueeze(1)
-    X_test_tensor = X_test.clone().detach()
-    y_test_tensor = y_test.clone().detach().unsqueeze(1)
-
-    # Create PyTorch datasets
-    train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-    val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
-    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+    # Convert the data to PyTorch tensors and create datasets
+    tensor_datasets = [
+        TensorDataset(X, y.unsqueeze(1))
+        for X, y in [(X_train, y_train), (X_val, y_val), (X_test, y_test)]
+    ]
 
     # Create PyTorch data loaders
-    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=1)
-    test_loader = DataLoader(test_dataset, batch_size=1)
+    train_loader = DataLoader(tensor_datasets[0], batch_size=1, shuffle=True)
+    val_loader = DataLoader(tensor_datasets[1], batch_size=1)
+    test_loader = DataLoader(tensor_datasets[2], batch_size=1)
 
-    # return dataloaders
-    return train_loader, test_loader, val_loader, w
+    return train_loader, test_loader, val_loader
 
 
 # --- Inner training loop ---
@@ -293,11 +282,14 @@ def train_potential(potential_init: Potential, ModelClass,
     return potential, weights, val_losses
 
 
+# ------------- MAIN METHOD -----------------
+
 if __name__ == "__main__":
     config = default_config
     d_feature = config["d_feature"]
 
-    train, test, val, w_star = generate_train_test_val_loaders(config)
+    X, y, w_star = generate_linear_data(config)
+    train, test, val = generate_train_test_val_loaders(X, y)
 
     pd_sqrt = t.rand((d_feature, d_feature))
     potential = pd_potential(pd_sqrt.T @ pd_sqrt)
