@@ -47,6 +47,29 @@ def generate_linear_data(config: dict = default_config) -> tuple[t.Tensor, t.Ten
     return X, y, w
 
 
+def create_dataloader_splits(X: t.Tensor, y: t.Tensor, k: int) -> list[DataLoader]:
+    """
+    Generates k equally-sized DataLoaders for cross-validation
+    from tensors X, y
+    """
+    n_samples, _ = X.shape
+    assert n_samples == y.shape[0], f"Tensors are incompatible sizes to form dataset: {X.shape} {y.shape}"
+
+    split_size = n_samples // k
+    if n_samples % k != 0:
+        print(f"\nWarning in utils.create_dataloader_splits: # of splits {k} does not divide n_samples {n_samples}.")
+        print(f"(DataLoaders will still be created, but only {split_size * k} samples will be used.)\n")
+
+    X_splits = [X[n * split_size : (n+1) * split_size] for n in range(k)]
+    y_splits = [y[n * split_size : (n+1) * split_size] for n in range(k)]
+
+    # tensor -> TensorDataset -> DataLoader
+    dataloaders = [ DataLoader(TensorDataset(X, y.unsqueeze(1)), batch_size=1)
+                    for X, y in zip(X_splits, y_splits) ]
+
+    return dataloaders
+
+
 def generate_train_test_val_loaders(X: t.Tensor, y: t.Tensor) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Generates torch.util.data.DataLoaders for test, train, val
@@ -56,7 +79,7 @@ def generate_train_test_val_loaders(X: t.Tensor, y: t.Tensor) -> tuple[DataLoade
     assert n_samples == y.shape[0], f"Tensors are incompatible sizes to form dataset: {X.shape} {y.shape}"
 
     # Split the dataset into train, validation, and test sets
-    train_ratio, val_ratio, test_ratio = 0.6, 0.2, 0.2
+    train_ratio, val_ratio, test_ratio = 0.6, 0.3, 0.1
     train_size = int(n_samples * train_ratio)
     val_size = int(n_samples * val_ratio)
 
