@@ -266,6 +266,7 @@ def train_potential(potential_init: Potential, ModelClass,
     potential = potential_init
     weights = []
     val_losses = []
+    potentials = []
 
     for epoch in range(n_epochs):
         model = ModelClass(config)
@@ -273,13 +274,14 @@ def train_potential(potential_init: Potential, ModelClass,
         loss = compute_validation_loss(model, test_loader)
         potential.update_parameters(loss)
         weights.append(model.w.weight.data)
+        potentials.append(potential.params['Q'].clone().detach())
 
         if epoch % (n_epochs // 10) == 0:
             val_loss = compute_validation_loss(model, val_loader)
             val_losses.append(val_loss)
             print(f"  Outer loop epoch {epoch}: val loss {val_loss}")  # TODO: make this more professional
     
-    return potential, weights, val_losses
+    return potential, weights, val_losses, potentials
 
 
 # ------------- MAIN METHOD -----------------
@@ -294,7 +296,8 @@ if __name__ == "__main__":
     pd_sqrt = t.rand((d_feature, d_feature))
     potential = pd_potential(pd_sqrt.T @ pd_sqrt)
 
-    trained_potential, trained_weights, val_losses = train_potential(potential, LinearModel, train, test, val, config)
+    trained_potential, trained_weights, val_losses, potentials = train_potential(potential, LinearModel, train, test, val, config)
+    print(potentials[0], potentials[-1])
 
     plt.plot(val_losses)
     plt.title("Validation loss vs epochs")
