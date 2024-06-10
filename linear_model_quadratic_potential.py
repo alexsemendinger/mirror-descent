@@ -42,12 +42,12 @@ def batch_loss(w: t.Tensor, test: DataLoader) -> t.Tensor:
 
 
 def train_w(w0: t.Tensor, Q: t.Tensor, train: DataLoader, test: DataLoader = None, config: dict = config):
-    d = config['d_feature']
     n_epochs = config['n_model_epochs']
     lr = config['model_lr']
     if config['return_iterates']: w_iterates, train_losses, test_losses = [w0.clone().detach()], [], []
 
     # dimension checks
+    d = config['d_feature']
     assert w0.shape == (1, d), f"{w0.shape}"
     assert Q.shape == (d, d), f"{Q.shape}"
 
@@ -70,6 +70,28 @@ def train_w(w0: t.Tensor, Q: t.Tensor, train: DataLoader, test: DataLoader = Non
     if config['return_iterates']:
         return w_iterates, train_losses, test_losses
     return w, [], []
+
+
+def train_Q(Q0, train, test, val=None, w0=None, config=config):
+    n_epochs = config['n_potential_epochs']
+    lr = config['potential_lr']
+    Q_iterates, test_losses, val_losses = [Q0.clone().detach()], [], []
+
+    d = config['d_feature']
+    assert Q0.shape == (d, d), f"{Q0.shape}"
+
+    Q = Q0.clone().requires_grad_(True)
+    for epoch in range(n_epochs):
+        w = w0 if w0 else t.randn((1, d), requires_grad=True)
+        w = train_w(w, Q, train, test, config)[0]
+        
+        test_loss = batch_loss(w, test)
+        test_losses.backward()
+        with t.no_grad():
+            Q -= lr * Q.grad
+            Q.grad.zero_()
+
+            val_loss = batch_loss(w, test)
 
 
 if __name__ == "__main__":
