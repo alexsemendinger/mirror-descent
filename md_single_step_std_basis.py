@@ -75,7 +75,7 @@ def crossval(w, Q, lr, xs, ys):
     For each (x_i, y_i) in zip(xs, ys):
     1. "Train" a model with a single step of mirror descent on (x_i, y_i)
     2. Evaluate it on the rest of the dataset
-    Return the average loss over all i, j with i != j.
+    Return the average loss over all i, j. (Here we're not restricting to i != j.)
     """
     k = len(xs)
     def L_ij(w, Q, xi, xj, yi, yj):

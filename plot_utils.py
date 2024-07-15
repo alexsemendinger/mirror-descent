@@ -27,14 +27,10 @@ def plot_together(data1, data2, title=None, yscale=None):
     if yscale:
         ax1.set_yscale(yscale)
         ax2.set_yscale(yscale)
-
-    #ax1.set_title('Dataset 1')
-    #ax2.set_title('Dataset 2')
-    plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust the layout to make room for the main title
     plt.show()
 
 
-def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_title=None, main_title='Evolution of Matrix', figsize=(20, 4)):
+def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_title=None, main_title=None, figsize=(20, 4)):
     """
     Visualize the evolution of matrices over time, optionally including an extra matrix for comparison.
 
@@ -45,10 +41,10 @@ def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_
 
     Example usage:
     With extra matrix (like w_cov):
-      plot_matrix_evolution(Qs, extra_matrix=w_cov, extra_matrix_title=f'w_cov, rank={rank}', main_title='Evolution of $Q$ during training')
+      `plot_matrix_evolution(Qs, extra_matrix=w_cov, extra_matrix_title=f'w_cov, rank={rank}', main_title='Evolution of $Q$ during training')`
 
     Without extra matrix:
-      plot_matrix_evolution(Qs, main_title='Evolution of $Q$ during training')
+      `plot_matrix_evolution(Qs, main_title='Evolution of $Q$ during training')`
 
     Parameters:
     -----------
@@ -91,7 +87,7 @@ def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_
     
     for j, i in enumerate(indices):
         ax = axes[j] if n_cols > 1 else axes
-        im = ax.imshow(matrices[i], cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        im = ax.imshow(matrices[i], cmap='RdBu', vmin=vmin, vmax=vmax)
         images.append(im)
         ax.axis('off')
         ax.set_title(f't={i}', fontsize='14')
@@ -99,7 +95,7 @@ def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_
     # Plot extra matrix if provided
     if extra_matrix is not None:
         ax = axes[-1]
-        im = ax.imshow(extra_matrix, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        im = ax.imshow(extra_matrix, cmap='RdBu', vmin=vmin, vmax=vmax)
         images.append(im)
         ax.axis('off')
         ax.set_title(extra_matrix_title or 'Extra Matrix', fontsize='14')

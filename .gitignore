@@ -1,2 +1,4 @@
 *.ipynb
 *.pyc
+!sgd_on_dlns.ipynb
+!md_single_step.ipynb
