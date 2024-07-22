@@ -30,7 +30,8 @@ def plot_together(data1, data2, title=None, yscale=None):
     plt.show()
 
 
-def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_title=None, main_title=None, figsize=(20, 4)):
+def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_title=None, main_title=None, 
+                          t_scale="log", figsize=None, cmap='RdBu'):
     """
     Visualize the evolution of matrices over time, optionally including an extra matrix for comparison.
 
@@ -58,12 +59,17 @@ def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_
         Title for the extra matrix. If None and extra_matrix is provided, 'Extra Matrix' is used.
     main_title : str, optional (default='Evolution of Matrix')
         The main title for the entire figure.
+    t_scale: str, "linear" (default) or "log"
+        Determines whether to use np.linspace or np.logspace for choosing indices to sample
     figsize : tuple of int, optional (default=(20, 4))
         Figure size in inches (width, height).
     """
+    assert t_scale in {'linear', 'log'}, f"Invalid t_scale option {t_scale}. Valid options are 'linear', 'log'."
+
     n_matrices = len(matrices)
     n_cols = n_images + 1 if extra_matrix is not None else n_images
     
+    if figsize is None: figsize = (4 * (n_cols - 1), 4)
     fig, axes = plt.subplots(1, n_cols, figsize=figsize)
     
     # Find global min and max for consistent color scale
@@ -81,13 +87,20 @@ def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_
     
     # Generate indices for even sampling, including first and last
     if n_images > 1:
-        indices = np.linspace(0, n_matrices - 1, n_images, dtype=int)
+        if t_scale == "linear":
+            indices = np.linspace(0, n_matrices - 1, n_images, dtype=int)
+        if t_scale == "log":
+            indices = np.logspace(-1, np.log(n_matrices - 1), n_images, dtype=int, base=2)
+            if indices[1] == 0: indices[1] = max(1, indices[2] // 2)  # cludge, don't repeat zero index
     else:
         indices = [0]
+
+    if indices[0] != 0:
+        print(f"Warning: not plotting matrix at index 0. \nIndices being plotted are: {indices}.")
     
     for j, i in enumerate(indices):
         ax = axes[j] if n_cols > 1 else axes
-        im = ax.imshow(matrices[i], cmap='RdBu', vmin=vmin, vmax=vmax)
+        im = ax.imshow(matrices[i], cmap=cmap, vmin=vmin, vmax=vmax)
         images.append(im)
         ax.axis('off')
         ax.set_title(f't={i}', fontsize='14')
@@ -95,10 +108,10 @@ def plot_matrix_evolution(matrices, n_images=5, extra_matrix=None, extra_matrix_
     # Plot extra matrix if provided
     if extra_matrix is not None:
         ax = axes[-1]
-        im = ax.imshow(extra_matrix, cmap='RdBu', vmin=vmin, vmax=vmax)
+        im = ax.imshow(extra_matrix, cmap=cmap, vmin=vmin, vmax=vmax)
         images.append(im)
         ax.axis('off')
-        ax.set_title(extra_matrix_title or 'Extra Matrix', fontsize='14')
+        ax.set_title(extra_matrix_title or '', fontsize='14')
     
     fig.suptitle(main_title, fontsize='18')
     
